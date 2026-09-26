@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AI Due Diligence Copilot - The institutional thinking engine for analyzing company filings, financial statements, and operational risks.">
+  <title>DueDiligence AI — The Thinking Engine Shaped for What Counts</title>
+  
+  <!-- CDNs for External Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="./src/styles/main.css">
+</head>
+<body>
+
+  <!-- Hidden File Input for Global Document Uploads -->
+  <input type="file" id="hidden-file-input" style="display: none;" accept=".pdf,.txt,.md">
+
+  <div class="app-container">
+    
+    <!-- Translucent Frosted Sidebar Navigation -->
+    <aside class="sidebar" aria-label="Main Navigation">
+      <div class="brand-section">
+        <div class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="brand-text-wrapper">
+          <span class="brand-name">DueDiligence AI</span>
+          <span class="brand-edition">3.0 Intelligence</span>
+        </div>
+      </div>
+      
+      <div class="company-selector-container">
+        <label for="company-select-dropdown">Target Entity</label>
+        <div class="select-wrapper">
+          <select id="company-select-dropdown" class="company-select">
+            <option value="acme">Acme SaaS Corp (ACME)</option>
+            <option value="solaris">Solaris Energy Partners (SOLR)</option>
+            <option value="biohealth">BioHealth Labs Inc. (BHLA)</option>
+            <option value="custom">Custom Uploaded Docs</option>
+          </select>
+          <svg class="select-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      
+      <nav class="nav-menu">
+        <button id="nav-tab-chat" class="nav-item active" data-tab="chat">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          Thinking Engine
+        </button>
+        <button id="nav-tab-dashboard" class="nav-item" data-tab="dashboard">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="9"></rect>
+            <rect x="14" y="3" width="7" height="5"></rect>
+            <rect x="14" y="12" width="7" height="9"></rect>
+            <rect x="3" y="16" width="7" height="5"></rect>
+          </svg>
+          Executive Overview
+        </button>
+        <button id="nav-tab-risks" class="nav-item" data-tab="risks">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          Risk Assessment
+        </button>
+        <button id="nav-tab-documents" class="nav-item" data-tab="documents">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          Document Index
+        </button>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <button id="settings-btn-sidebar" class="settings-btn">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          Gemini Settings
+        </button>
+      </div>
+    </aside>
+    
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Top Minimal Header -->
+      <header class="top-header">
+        <div class="active-company-info">
+          <span id="active-company-badge" class="company-badge">ACME</span>
+          <h2 id="active-company-name" class="company-full-name">Acme SaaS Corporation</h2>
+        </div>
+        
+        <div id="api-key-status" class="api-status-indicator">
+          <span id="api-status-dot" class="status-dot"></span>
+          <span id="api-status-text">Gemini Offline Mode</span>
+        </div>
+      </header>
+      
+      <!-- Tab Content Panels -->
+      <div class="tab-panels">
+        
+        <!-- PANEL 1: AI COPILOT CHAT / THINKING ENGINE HERO (Matching User's Reference) -->
+        <section id="panel-chat" class="panel active" aria-labelledby="nav-tab-chat">
+          <div class="editorial-hero-container">
+            
+            <!-- Announcement Pill Badge -->
+            <div class="editorial-pill-badge">
+              <span class="pill-badge-tag">Now</span>
+              <span class="pill-badge-text">Due Diligence AI 3.0 is here</span>
+            </div>
+            
+            <!-- Editorial Headline & Subtitle -->
+            <h1 class="editorial-hero-title">The thinking engine<br>shaped for what counts.</h1>
+            <p class="editorial-hero-subtitle">
+              DueDiligence AI is an institutional intelligence system that reasons through every 10-K filing,
+              debt wall, and clinical trial carefully before answering. Query filings in seconds, uncover anomalies, and make investment decisions you can really rely on.
+            </p>
+
+            <!-- The Signature Floating Frosted Glass Prompt Console -->
+            <div class="floating-prompt-console">
+              <textarea 
+                id="chat-user-input" 
+                class="floating-prompt-input" 
+                placeholder="What are the details of the Sentinel lawsuit?" 
+                aria-label="Due diligence query input"
+                rows="2"
+              ></textarea>
+              
+              <div class="floating-prompt-actions">
+                <div class="prompt-actions-left">
+                  <button 
+                    type="button" 
+                    id="console-attach-btn" 
+                    class="console-action-circle" 
+                    title="Attach 10-K, Pitch Deck or PDF" 
+                    aria-label="Upload document"
+                    onclick="document.getElementById('hidden-file-input').click()"
+                  >
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                  </button>
+                  <span class="attach-hint">Drop filings or click + to upload</span>
+                </div>
+                
+                <div class="prompt-actions-right">
+                  <button 
+                    type="button" 
+                    id="console-mic-btn" 
+                    class="console-icon-btn" 
+                    title="Voice dictation" 
+                    aria-label="Voice input"
+                  >
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                      <line x1="12" y1="19" x2="12" y2="23"></line>
+                      <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                  </button>
+                  <button 
+                    id="chat-send-button" 
+                    class="console-submit-btn" 
+                    title="Execute query" 
+                    aria-label="Execute query"
+                  >
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                      <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Contextual Suggestion Prompt Chips -->
+            <div id="chat-suggestions-container" class="chat-suggestions">
+              <!-- Prompt chips dynamically injected based on company -->
+            </div>
+          </div>
+          
+          <!-- Conversation Stream Container -->
+          <div id="chat-history-container" class="chat-history">
+            <!-- Messages rendered by app.js -->
+          </div>
+        </section>
+        
+        <!-- PANEL 2: EXECUTIVE DASHBOARD -->
+        <section id="panel-dashboard" class="panel" aria-labelledby="nav-tab-dashboard">
+          <div class="dashboard-grid">
+            <div class="glass-card dashboard-hero">
+              <span id="dashboard-company-industry" class="industry-label">Enterprise Cloud & SaaS</span>
+              <h2 id="dashboard-company-title">Overview Summary</h2>
+              <p id="dashboard-company-summary" class="summary-text">
+                Loading summary parameters...
+              </p>
+            </div>
+          </div>
+          
+          <div class="chart-grid">
+            <div class="glass-card chart-card">
+              <h3>Revenue Growth & Cash Reserves</h3>
+              <div class="chart-wrapper">
+                <canvas id="revenue-chart-canvas"></canvas>
+              </div>
+            </div>
+            <div class="glass-card chart-card">
+              <h3>EBITDA Profitability vs Total Debt Burden</h3>
+              <div class="chart-wrapper">
+                <canvas id="leverage-chart-canvas"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- PANEL 3: RISK ASSESSMENT -->
+        <section id="panel-risks" class="panel" aria-labelledby="nav-tab-risks">
+          <div class="risk-metrics-bar">
+            
+            <div class="glass-card risk-stat-card">
+              <div class="stat-icon critical">!</div>
+              <div class="stat-details">
+                <h4 id="risk-count-critical">0</h4>
+                <span>Critical Risks</span>
+              </div>
+            </div>
+            
+            <div class="glass-card risk-stat-card">
+              <div class="stat-icon high">!!</div>
+              <div class="stat-details">
+                <h4 id="risk-count-high">0</h4>
+                <span>High Risks</span>
+              </div>
+            </div>
+            
+            <div class="glass-card risk-stat-card">
+              <div class="stat-icon medium">✓</div>
+              <div class="stat-details">
+                <h4 id="risk-count-medium">0</h4>
+                <span>Medium Risks</span>
+              </div>
+            </div>
+            
+          </div>
+          
+          <div class="glass-card risk-table-container">
+            <table class="risk-table">
+              <thead>
+                <tr>
+                  <th style="width: 15%">Severity</th>
+                  <th style="width: 22%">Category</th>
+                  <th style="width: 48%">Risk Details</th>
+                  <th style="width: 15%">References</th>
+                </tr>
+              </thead>
+              <tbody id="risk-table-body">
+                <!-- Rows injected by app.js -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+        
+        <!-- PANEL 4: DOCUMENT MANAGER -->
+        <section id="panel-documents" class="panel" aria-labelledby="nav-tab-documents">
+          <div class="manager-grid">
+            
+            <div class="glass-card">
+              <h2 style="margin-bottom: 16px;">Ingest Documents</h2>
+              <div id="drag-drop-zone" class="upload-zone" tabindex="0" aria-label="Drag and drop or click to upload PDF or text files">
+                <div class="upload-icon">
+                  <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                </div>
+                <h3>Drag & Drop Files Here</h3>
+                <p>Supports SEC 10-K, Pitch Decks, PDF, TXT, or Markdown</p>
+              </div>
+            </div>
+            
+            <div class="glass-card">
+              <h2 style="margin-bottom: 16px;">Document Knowledge Index</h2>
+              <div id="document-library-list" class="file-list">
+                <!-- Indexed document items will be injected here -->
+              </div>
+            </div>
+            
+          </div>
+        </section>
+        
+      </div>
+    </main>
+    
+    <!-- SIDE CITATION DRAWER -->
+    <div id="citation-drawer-overlay" class="drawer-overlay" aria-hidden="true">
+      <section class="side-drawer" aria-labelledby="drawer-company-name">
+        <div class="drawer-header">
+          <h2 id="drawer-company-name" class="drawer-company">Acme SaaS Corp</h2>
+          <button id="citation-drawer-close" class="drawer-close-btn" aria-label="Close details">×</button>
+        </div>
+        
+        <div class="drawer-meta">
+          <span id="citation-drawer-section" class="drawer-section">Legal Proceedings</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">Source Citation Snippet</span>
+        </div>
+        
+        <div id="citation-drawer-body" class="drawer-content">
+          <!-- Text chunk content goes here -->
+        </div>
+      </section>
+    </div>
+    
+    <!-- GEMINI SETTINGS MODAL -->
+    <div id="settings-modal-overlay" class="modal-overlay" aria-hidden="true">
+      <div class="glass-card modal-card">
+        <div class="modal-header">
+          <h2 class="modal-title">Gemini API Key Configuration</h2>
+          <button id="settings-modal-close" class="drawer-close-btn" aria-label="Close settings">×</button>
+        </div>
+        
+        <div class="modal-body">
+          <p>
+            By default, this app operates in offline mode with pre-loaded intelligence for sample companies.
+            Add your Gemini API Key below to unlock live, context-aware RAG search on custom uploaded PDFs!
+          </p>
+          
+          <div class="form-group">
+            <label for="gemini-api-key-input">Gemini API Key</label>
+            <input type="password" id="gemini-api-key-input" class="form-input" placeholder="AIzaSy...">
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button id="settings-cancel-btn" class="btn btn-secondary">Cancel</button>
+          <button id="settings-save-btn" class="btn btn-primary">Save Changes</button>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- Application JS Code -->
+  <script type="module" src="./src/js/app.js"></script>
+</body>
+</html>
