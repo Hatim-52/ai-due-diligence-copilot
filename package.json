@@ -2,6 +2,8 @@
   "name": "ai-due-diligence-copilot",
   "private": true,
   "version": "1.0.0",
+  "license": "MIT",
+  "author": "Hatim Noor",
   "type": "module",
   "scripts": {
     "dev": "vite",

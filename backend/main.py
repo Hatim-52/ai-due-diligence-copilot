@@ -11,24 +11,37 @@ import time
 from pypdf import PdfReader
 
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 
 from backend.data import COMPANIES_DATA
 from backend.rag import CUSTOM_DOCUMENTS, execute_rag_query, index_document, save_custom_documents
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+DIST_DIR = BASE_DIR / "dist"
+SRC_DIR = BASE_DIR / "src"
+UPLOADS_DIR = BASE_DIR / "uploads"
+
 # Ensure uploads directory exists
-os.makedirs("uploads", exist_ok=True)
+os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 app = FastAPI(title="Due Diligence AI Copilot Backend")
 
-# Serve static files from the src directory
-app.mount("/src", StaticFiles(directory="src"), name="src")
+# Serve built Vite assets if dist directory exists
+if (DIST_DIR / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=str(DIST_DIR / "assets")), name="assets")
 
-# Serve the main index.html at root
+# Serve unbundled static files from the src directory
+if SRC_DIR.exists():
+    app.mount("/src", StaticFiles(directory=str(SRC_DIR)), name="src")
+
+# Serve main index.html (prioritize built Vite dist/index.html if available)
 @app.get("/")
 async def serve_index():
-    return FileResponse("index.html")
+    if (DIST_DIR / "index.html").exists():
+        return FileResponse(str(DIST_DIR / "index.html"))
+    return FileResponse(str(BASE_DIR / "index.html"))
 
 class QueryPayload(BaseModel):
     companyId: str
@@ -58,7 +71,8 @@ async def upload_document(
     Receives document uploads (PDF, TXT, MD), saves them to disk, parses text,
     indexes into the vector store, and returns file metadata.
     """
-    MAX_UPLOAD_SIZE = 20 * 1024 * 1024  # 20 MB
+    max_mb = int(os.environ.get("MAX_UPLOAD_SIZE_MB", "25"))
+    MAX_UPLOAD_SIZE = max_mb * 1024 * 1024
     ALLOWED_EXTENSIONS = {"pdf", "txt", "md"}
 
     filename = file.filename
@@ -96,7 +110,7 @@ async def upload_document(
 
     try:
         # Save uploaded file to disk
-        file_path = os.path.join("uploads", filename)
+        file_path = os.path.join(UPLOADS_DIR, filename)
         with open(file_path, "wb") as f:
             f.write(file_bytes)
 
