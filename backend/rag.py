@@ -546,17 +546,12 @@ async def execute_rag_query(company_id, query, api_key=None):
                 raise Exception("Query embedding generation returned empty.")
             query_emb = query_embeddings[0]
             
-            # 2. Setup meta filter scope
-            where_filter = {}
-            if company_id == "custom":
-                where_filter = {"companyId": "custom"}
-            elif company_id:
-                where_filter = {
-                    "$or": [
-                        {"companyId": company_id},
-                        {"companyId": "custom"}
-                    ]
-                }
+             # 2. Setup meta filter scope (match uploaded docs by their doc id)
+            custom_filters = [{"docId": d["id"]} for d in CUSTOM_DOCUMENTS]
+            if company_id == "custom" or not company_id:
+                where_filter = {"$or": custom_filters} if custom_filters else {"companyId": "custom"}
+            else:
+                where_filter = {"$or": [{"companyId": company_id}] + custom_filters}
                 
             # 3. Query Vector Database
             results = collection.query(
