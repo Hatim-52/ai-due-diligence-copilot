@@ -3,6 +3,7 @@ import httpx
 import os
 import json
 import math
+import asyncio
 from backend.data import COMPANIES_DATA
 
 CUSTOM_DOCUMENTS_PATH = "./custom_documents.json"
@@ -73,7 +74,7 @@ class MinivectorDB:
     def save(self):
         try:
             with open(self.filepath, "w", encoding="utf-8") as f:
-                json.dump(self.data, f, indent=2)
+                json.dump(self.data, f)
         except Exception as e:
             print(f"Warning: Failed to save vector database file: {str(e)}")
 
@@ -258,43 +259,52 @@ async def call_gemini_api(api_key, prompt, model_name=None):
         raise Exception(f"Failed to parse Gemini API response structure: {str(e)}")
 
 async def get_gemini_embeddings(api_key: str, texts: list[str], model_name: str = None) -> list[list[float]]:
-    """
-    Generates vector embeddings using Gemini's embedding API.
-    Defaults to gemini-embedding-001 (configurable via GEMINI_EMBEDDING_MODEL).
-    Sends batch embedding requests for speed.
-    """
+    import asyncio
+
+    BATCH_SIZE = 50
+    MAX_RETRIES = 5
+
     if not texts:
         return []
-    
+
     if not model_name:
         model_name = os.environ.get("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
-        
+
     batch_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:batchEmbedContents?key={api_key}"
-    
-    requests_payload = []
-    for text in texts:
-        requests_payload.append({
-            "model": f"models/{model_name}",
-            "content": {
-                "parts": [{"text": text}]
-            }
-        })
-    
-    payload = {
-        "requests": requests_payload
-    }
-    
+
+    all_embeddings = []
     async with httpx.AsyncClient() as client:
-        response = await client.post(batch_url, json=payload, timeout=60.0)
-        
-    if response.status_code != 200:
-        raise Exception(f"Gemini Embedding API Error: {response.text}")
-        
-    data = response.json()
-    embeddings = []
-    for emb_data in data.get("embeddings", []):
-        embeddings.append(emb_data["values"])
-    return embeddings
+        for start in range(0, len(texts), BATCH_SIZE):
+            batch = texts[start:start + BATCH_SIZE]
+            payload = {
+                "requests": [
+                    {
+                        "model": f"models/{model_name}",
+                        "content": {"parts": [{"text": t}]},
+                    }
+                    for t in batch
+                ]
+            }
+
+            for attempt in range(MAX_RETRIES):
+                response = await client.post(batch_url, json=payload, timeout=60.0)
+                if response.status_code == 200:
+                    break
+                if response.status_code in (429, 500, 503) and attempt < MAX_RETRIES - 1:
+                    await asyncio.sleep(2 * (2 ** attempt))
+                    continue
+                raise Exception(f"Gemini Embedding API Error: {response.text}")
+
+            data = response.json()
+            batch_embeddings = [e["values"] for e in data.get("embeddings", [])]
+            if len(batch_embeddings) != len(batch):
+                raise Exception("Gemini returned a different number of embeddings than requested.")
+            all_embeddings.extend(batch_embeddings)
+
+            if start + BATCH_SIZE < len(texts):
+                await asyncio.sleep(0.5)
+
+    return all_embeddings
 
 async def index_document(api_key: str, doc_text: str, source_name: str, company_id: str, section_name: str, doc_id: str):
     """
