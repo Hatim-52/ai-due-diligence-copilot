@@ -237,7 +237,7 @@ async def call_gemini_api(api_key, prompt, model_name=None):
         "generationConfig": {
             "temperature": 0.2,
             "topP": 0.95,
-            "maxOutputTokens": 1024
+            "maxOutputTokens": 4096
         }
     }
     
@@ -556,7 +556,7 @@ async def execute_rag_query(company_id, query, api_key=None):
             # 3. Query Vector Database
             results = collection.query(
                 query_embeddings=[query_emb],
-                n_results=3,
+                n_results=6,
                 where=where_filter
             )
             
